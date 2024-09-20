@@ -12,8 +12,7 @@ from workout import views
 
 
 router = DefaultRouter()
-router.register('workout', views.WorkoutViewSet)
-
+router.register(r'workout', views.WorkoutViewSet)
 app_name = 'workout'
 
 urlpatterns = [

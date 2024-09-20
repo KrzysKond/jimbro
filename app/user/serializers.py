@@ -9,6 +9,28 @@ from django.contrib.auth import (
 
 from django.utils.translation import gettext as _
 from rest_framework import serializers
+from core.models import Group, User
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'members']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        members_data = validated_data.pop('members', None)
+        group = Group.objects.create(**validated_data)
+        if members_data is not None:
+            group.members.set(members_data)
+        return group
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+        return instance
 
 
 class UserSerializer(serializers.ModelSerializer):
