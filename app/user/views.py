@@ -1,7 +1,9 @@
 """
 Views for the user API
 """
-from rest_framework import generics, authentication, permissions, viewsets, status
+from rest_framework import (
+    generics, authentication,
+    permissions, viewsets, status)
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
@@ -31,10 +33,13 @@ class GroupViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if user in group.members.all():
-            return Response({'detail': 'User is already a member of this group.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': 'User is already a member of this group.'},
+                status=status.HTTP_400_BAD_REQUEST)
 
         group.members.add(user)
-        return Response({'detail': 'User added to the group.'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'User added to the group.'},
+                        status=status.HTTP_200_OK)
 
 
 class CreateUserView(generics.CreateAPIView):

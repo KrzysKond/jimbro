@@ -54,7 +54,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Group(models.Model):
     """Group model."""
     name = models.CharField(max_length=255)
-    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='group_memberships')
+    members = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='group_memberships')
 
     def __str__(self):
         return self.name

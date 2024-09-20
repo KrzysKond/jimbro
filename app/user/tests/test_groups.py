@@ -11,7 +11,8 @@ GROUPS_URL = reverse('user:group-list')  # List groups endpoint
 
 def join_group_url(group_id):
     """Create and return join group URL"""
-    return reverse('user:group-join-group', args=[group_id])  # Use the correct URL name
+    return reverse('user:group-join-group',
+                   args=[group_id])
 
 
 def create_user(**params):
@@ -26,7 +27,8 @@ def create_group(**params):
 
 def group_detail_url(group_id):
     """Create and return group detail URL"""
-    return reverse('user:group-detail', args=[group_id])  # Use the correct URL name
+    return reverse('user:group-detail',
+                   args=[group_id])  # Use the correct URL name
 
 
 class PublicGroupApiTests(TestCase):
@@ -39,8 +41,10 @@ class PublicGroupApiTests(TestCase):
         """Test that authentication is required to join a group."""
         group = create_group(name='Test Group')
         payload = {'name': 'Test Name'}
-        res = self.client.post(join_group_url(group.id), payload)  # Use the join_group_url function
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        res = (self.client
+               .post(join_group_url(group.id), payload))
+        self.assertEqual(res.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
 
 
 class PrivateGroupApiTests(TestCase):
@@ -66,17 +70,21 @@ class PrivateGroupApiTests(TestCase):
     def test_join_group_success(self):
         """Test joining a group successfully."""
         group = create_group(name='Test Group')
-        res = self.client.post(join_group_url(group.id))  # Use the join_group_url function
+        res = (self.client
+               .post(join_group_url(group.id)))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn(self.user, group.members.all())
 
     def test_join_group_already_member(self):
-        """Test that a user cannot join a group they are already a member of."""
+        """Test that a user cannot join a group they are already a member of"""
         group = create_group(name='Test Group')
         group.members.add(self.user)
-        res = self.client.post(join_group_url(group.id))  # Use the join_group_url function
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('User is already a member of this group.', res.data['detail'])
+        res = (self.client
+               .post(join_group_url(group.id)))
+        self.assertEqual(res.status_code,
+                         status.HTTP_400_BAD_REQUEST)
+        self.assertIn('User is already a member of this group.',
+                      res.data['detail'])
 
     def test_list_groups(self):
         """Test listing groups."""

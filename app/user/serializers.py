@@ -13,7 +13,10 @@ from core.models import Group, User
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
+    members = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        many=True,
+        required=False)
 
     class Meta:
         model = Group
