@@ -12,6 +12,7 @@ from workout.serializers import WorkoutSerializer
 from datetime import date
 
 WORKOUT_URL = reverse('workout:workout-list')
+WORKOUT_BY_DATE = reverse('workout:workout-get-by-date')
 
 
 def workout_detail(workout_id):
@@ -24,8 +25,10 @@ def image_upload_url(workout_id):
     return reverse('workout:workout-upload-image', args=[workout_id])
 
 
-def create_workout(user):
-    workout = Workout.objects.create(user=user, date=date.today())
+def create_workout(user, given_date=None):
+    if given_date is None:
+        given_date = date.today()
+    workout = Workout.objects.create(user=user, date=given_date)
     return workout
 
 
@@ -72,15 +75,29 @@ class PrivateWorkoutAPITests(TestCase):
     def test_create_workout(self):
         """Test for creating workout"""
         title = 'Jazda z kurczaczkami'
-        res = self.client.post(WORKOUT_URL,  {
-                'title': title,
-                'date': date.today()},
-                format='json')
+        res = self.client.post(WORKOUT_URL, {
+            'title': title,
+            'date': date.today()},
+            format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         workout = Workout.objects.get(id=res.data['id'])
         self.assertEqual(workout.date, workout.date)
         self.assertEqual(workout.user, self.user)
         self.assertEqual(workout.title, title)
+
+    def test_retrieve_workouts_by_date(self):
+        """Test retrieving workouts
+             for the authenticated user by a specific date."""
+        create_workout(user=self.user, given_date=date(2023, 9, 22))
+        create_workout(user=self.user, given_date=date(2023, 9, 23))
+
+        res = self.client.get(WORKOUT_BY_DATE, {'date': '2023-09-22'})
+
+        workouts = Workout.objects.filter(user=self.user, date='2023-09-22')
+        serializer = WorkoutSerializer(workouts, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
 
 
 class ImageUploadTests(TestCase):

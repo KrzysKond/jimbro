@@ -8,9 +8,12 @@ from core.models import Workout
 
 class WorkoutSerializer(serializers.ModelSerializer):
     """Serializer for workouts"""
+    username = serializers.CharField(source='user.name', read_only=True)
+
     class Meta:
         model = Workout
-        fields = ['id', 'title', 'date']
+
+        fields = ['id', 'title', 'date', 'username']
         read_only_fields = ['id']
 
     def create(self, validated_data):

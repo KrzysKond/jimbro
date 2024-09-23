@@ -17,7 +17,7 @@ urlpatterns = [
         name='api-docs',
     ),
     path('api/user/', include('user.urls')),
-    path('api/workout/', include('workout.urls'))
+    path('api/', include('workout.urls'))
 ]
 
 if settings.DEBUG:

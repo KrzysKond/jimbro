@@ -4,6 +4,8 @@
 """
 Views for the workout APIs
 """
+from datetime import datetime
+
 from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -48,11 +50,46 @@ class WorkoutViewSet(viewsets.ModelViewSet):
     @action(methods=['POST'], detail=True, url_path='upload-image')
     def upload_image(self, request, pk=None):
         """Upload an image to a workout."""
-        recipe = self.get_object()
-        serializer = self.get_serializer(recipe, data=request.data)
+        workout = self.get_object()
+        serializer = self.get_serializer(workout, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=False, url_path='get-by-date')
+    def get_by_date(self, request, pk=None):
+        """Retrieve workouts for the authenticated user by a specific date."""
+        date_str = request.query_params.get('date', None)
+        if date_str:
+            try:
+                query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({
+                    'detail': 'Invalid date format. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST)
+        else:
+            query_date = datetime.today()
+
+        workouts = self.get_queryset().filter(date=query_date)
+
+        if workouts.exists():
+            workout_serializer = self.get_serializer(workouts, many=True)
+            combined_data = []
+
+            for workout, workout_data in zip(
+                    workouts,
+                    workout_serializer.data):
+                image_serializer = serializers.WorkoutImageSerializer(workout)
+                image_url = image_serializer.data.get('image', None)
+                if image_url:
+                    image_url = request.build_absolute_uri(image_url)
+                workout_data['image'] = image_url
+                combined_data.append(workout_data)
+
+            return Response(combined_data, status=status.HTTP_200_OK)
+
+        return Response({'detail': 'No workouts found for the given date.'},
+                        status=status.HTTP_404_NOT_FOUND)
