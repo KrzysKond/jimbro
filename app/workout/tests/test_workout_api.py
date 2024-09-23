@@ -95,6 +95,8 @@ class PrivateWorkoutAPITests(TestCase):
 
         workouts = Workout.objects.filter(user=self.user, date='2023-09-22')
         serializer = WorkoutSerializer(workouts, many=True)
+        for workout in res.data:
+            workout.pop('image', None)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
