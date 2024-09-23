@@ -9,6 +9,7 @@ from core.models import Workout
 from rest_framework import status
 from rest_framework.test import APIClient
 from workout.serializers import WorkoutSerializer
+from datetime import date
 
 WORKOUT_URL = reverse('workout:workout-list')
 
@@ -24,7 +25,7 @@ def image_upload_url(workout_id):
 
 
 def create_workout(user):
-    workout = Workout.objects.create(user=user)
+    workout = Workout.objects.create(user=user, date=date.today())
     return workout
 
 
@@ -71,10 +72,13 @@ class PrivateWorkoutAPITests(TestCase):
     def test_create_workout(self):
         """Test for creating workout"""
         title = 'Jazda z kurczaczkami'
-        res = self.client.post(WORKOUT_URL,  {'title': title}, format='json')
-        print(res.data)
+        res = self.client.post(WORKOUT_URL,  {
+                'title': title,
+                'date': date.today()},
+                format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         workout = Workout.objects.get(id=res.data['id'])
+        self.assertEqual(workout.date, workout.date)
         self.assertEqual(workout.user, self.user)
         self.assertEqual(workout.title, title)
 

@@ -70,6 +70,7 @@ class Workout(models.Model):
     )
     title = models.CharField(max_length=255)
     image = models.ImageField(null=True, upload_to=workout_image_file_path)
+    date = models.DateField()
 
     def __str__(self):
         return self.title
