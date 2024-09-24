@@ -26,6 +26,9 @@ class GroupSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         members_data = validated_data.pop('members', None)
         group = Group.objects.create(**validated_data)
+        request_user = self.context['request'].user
+        group.members.add(request_user)
+
         if members_data is not None:
             group.members.set(members_data)
         return group

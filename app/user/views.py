@@ -26,6 +26,12 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
+    @action(methods=['GET'], detail=False)
+    def my_groups(self, request):
+        groups = Group.objects.filter(members=request.user)
+        serializer = self.get_serializer(groups, many=True)
+        return Response(serializer.data)
+
     @action(methods=['POST'], detail=True, url_path='join')
     def join_group(self, request, pk=None):
         """Allow a user to join a group."""
