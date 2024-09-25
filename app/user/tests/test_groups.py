@@ -9,6 +9,11 @@ from core.models import Group
 GROUPS_URL = reverse('user:group-list')  # List groups endpoint
 
 
+def leave_group_url(group_id):
+    return reverse('user:group-leave-group',
+                   args=[group_id])
+
+
 def join_group_url(group_id):
     """Create and return join group URL"""
     return reverse('user:group-join-group',
@@ -112,3 +117,23 @@ class PrivateGroupApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         exists = Group.objects.filter(id=group.id).exists()
         self.assertFalse(exists)
+
+    def test_leave_group_success(self):
+        """Test leaving a group successfully."""
+        group = create_group(name='Test Group')
+        group.members.add(self.user)  # Add the user to the group
+        url = leave_group_url(group.id)  # Use the leave_group_url function
+
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['detail'], 'User deleted from the group')
+        self.assertNotIn(self.user, group.members.all())
+
+    def test_leave_group_not_member(self):
+        """Test that a user cannot leave a group if they are not a member."""
+        group = create_group(name='Test Group')  # User is not added to the group
+        url = leave_group_url(group.id)  # Use the leave_group_url function
+
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data['detail'], 'User is not a member of a group')

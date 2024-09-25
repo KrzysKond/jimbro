@@ -32,6 +32,21 @@ class GroupViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(groups, many=True)
         return Response(serializer.data)
 
+    @action(methods=['POST'], detail=True, url_path='leave')
+    def leave_group(self, request, pk=None):
+        group = self.get_object()
+        user = request.user
+        if user in group.members.all():
+            group.members.remove(user)
+            return Response(
+                {'detail': 'User deleted from the group'},
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            {'detail': 'User is not a member of a group'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     @action(methods=['POST'], detail=True, url_path='join')
     def join_group(self, request, pk=None):
         """Allow a user to join a group."""
