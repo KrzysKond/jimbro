@@ -6,6 +6,7 @@ Views for the workout APIs
 """
 from datetime import datetime
 
+from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -61,8 +62,8 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET'], detail=False, url_path='get-by-date')
     def get_by_date(self, request, pk=None):
-        """Retrieve workouts for the authenticated user by a specific date."""
         date_str = request.query_params.get('date', None)
+
         if date_str:
             try:
                 query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -71,17 +72,30 @@ class WorkoutViewSet(viewsets.ModelViewSet):
                     'detail': 'Invalid date format. Use YYYY-MM-DD.'},
                     status=status.HTTP_400_BAD_REQUEST)
         else:
-            query_date = datetime.today()
+            query_date = datetime.today().date()
 
-        workouts = self.get_queryset().filter(date=query_date)
+        # Get the user model
+        User = get_user_model()
+
+        # Get groups of the authenticated user
+        user_groups = request.user.group_memberships.all()
+
+        # Get IDs of members in those groups
+        group_member_ids = User.objects.filter(
+            group_memberships__in=user_groups
+        ).values_list('id', flat=True)
+
+        # Retrieve workouts for users in the same groups on the specified date
+        workouts = self.get_queryset().filter(
+            user__in=group_member_ids, date=query_date
+        )
 
         if workouts.exists():
             workout_serializer = self.get_serializer(workouts, many=True)
             combined_data = []
 
-            for workout, workout_data in zip(
-                    workouts,
-                    workout_serializer.data):
+            for workout, workout_data in (
+                    zip(workouts, workout_serializer.data)):
                 image_serializer = serializers.WorkoutImageSerializer(workout)
                 image_url = image_serializer.data.get('image', None)
                 if image_url:

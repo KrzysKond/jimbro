@@ -5,7 +5,7 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from core.models import Workout
+from core.models import Workout, Group
 from rest_framework import status
 from rest_framework.test import APIClient
 from workout.serializers import WorkoutSerializer
@@ -88,7 +88,10 @@ class PrivateWorkoutAPITests(TestCase):
     def test_retrieve_workouts_by_date(self):
         """Test retrieving workouts
              for the authenticated user by a specific date."""
+        group = Group.objects.create(name="TestGroup")
+        group.members.add(self.user)
         create_workout(user=self.user, given_date=date(2023, 9, 22))
+
         create_workout(user=self.user, given_date=date(2023, 9, 23))
 
         res = self.client.get(WORKOUT_BY_DATE, {'date': '2023-09-22'})

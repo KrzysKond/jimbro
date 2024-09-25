@@ -103,7 +103,7 @@ class PrivateGroupApiTests(TestCase):
         """Test updating a group."""
         group = create_group(name='Old Name')
         payload = {'name': 'Updated Name'}
-        url = group_detail_url(group.id)  # Use the group_detail_url function
+        url = group_detail_url(group.id)
         res = self.client.patch(url, payload)
         group.refresh_from_db()
         self.assertEqual(group.name, payload['name'])
@@ -130,9 +130,10 @@ class PrivateGroupApiTests(TestCase):
         self.assertNotIn(self.user, group.members.all())
 
     def test_leave_group_not_member(self):
-        """Test that a user cannot leave a group if they are not a member."""
-        group = create_group(name='Test Group')  # User is not added to the group
-        url = leave_group_url(group.id)  # Use the leave_group_url function
+        """Test that a user cannot leave a
+         group if they are not a member."""
+        group = create_group(name='Test Group')
+        url = leave_group_url(group.id)
 
         res = self.client.post(url)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
