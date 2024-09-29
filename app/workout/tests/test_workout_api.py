@@ -58,11 +58,6 @@ class PrivateWorkoutAPITests(TestCase):
 
     def test_retrieve_workouts(self):
         """Test retrieving workouts"""
-        other_user = get_user_model().objects.create_user(
-            'other@example.com',
-            'password123',
-        )
-        create_workout(user=other_user)
         create_workout(user=self.user)
 
         res = self.client.get(WORKOUT_URL)

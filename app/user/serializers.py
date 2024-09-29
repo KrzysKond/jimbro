@@ -9,34 +9,15 @@ from django.contrib.auth import (
 
 from django.utils.translation import gettext as _
 from rest_framework import serializers
-from core.models import Group, User
+from core.models import Group
 
 
-class GroupSerializer(serializers.ModelSerializer):
-    members = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        many=True,
-        required=False)
+class UserNameSerializer(serializers.ModelSerializer):
+    """Serializer to return just the name of the user"""
 
     class Meta:
-        model = Group
-        fields = ['id', 'name', 'members']
-        read_only_fields = ['id']
-
-    def create(self, validated_data):
-        members_data = validated_data.pop('members', None)
-        group = Group.objects.create(**validated_data)
-        request_user = self.context['request'].user
-        group.members.add(request_user)
-
-        if members_data is not None:
-            group.members.set(members_data)
-        return group
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.save()
-        return instance
+        model = get_user_model()
+        fields = ['name']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -60,6 +41,30 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    members = UserNameSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'members']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        members_data = validated_data.pop('members', None)
+        group = Group.objects.create(**validated_data)
+        request_user = self.context['request'].user
+        group.members.add(request_user)
+
+        if members_data is not None:
+            group.members.set(members_data)
+        return group
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+        return instance
 
 
 class AuthTokenSerializer(serializers.Serializer):

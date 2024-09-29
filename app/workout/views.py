@@ -31,9 +31,7 @@ class WorkoutViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve workouts for authenticated user."""
         queryset = self.queryset
-        return queryset.filter(
-            user=self.request.user
-        ).order_by('-id').distinct()
+        return queryset.filter().order_by('-id').distinct()
 
     def get_serializer_class(self):
         """Return the serializer class for request"""
@@ -83,12 +81,14 @@ class WorkoutViewSet(viewsets.ModelViewSet):
         # Get IDs of members in those groups
         group_member_ids = User.objects.filter(
             group_memberships__in=user_groups
-        ).values_list('id', flat=True)
+        ).values_list('id', flat=True).distinct()
+        print(group_member_ids)
 
         # Retrieve workouts for users in the same groups on the specified date
         workouts = self.get_queryset().filter(
             user__in=group_member_ids, date=query_date
         )
+        print(workouts, user_groups, user_groups)
 
         if workouts.exists():
             workout_serializer = self.get_serializer(workouts, many=True)

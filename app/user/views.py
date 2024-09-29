@@ -38,6 +38,8 @@ class GroupViewSet(viewsets.ModelViewSet):
         user = request.user
         if user in group.members.all():
             group.members.remove(user)
+            if group.members.count() == 0:
+                group.delete()
             return Response(
                 {'detail': 'User deleted from the group'},
                 status=status.HTTP_200_OK
