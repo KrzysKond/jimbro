@@ -99,6 +99,23 @@ class PrivateWorkoutAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
+    def test_retrieve_workouts_by_date_no_groups(self):
+        """Test retrieving workouts
+             for the authenticated user by a specific date."""
+        create_workout(user=self.user, given_date=date(2023, 9, 22))
+
+        create_workout(user=self.user, given_date=date(2023, 9, 23))
+
+        res = self.client.get(WORKOUT_BY_DATE, {'date': '2023-09-22'})
+
+        workouts = Workout.objects.filter(user=self.user, date='2023-09-22')
+        serializer = WorkoutSerializer(workouts, many=True)
+        for workout in res.data:
+            workout.pop('image', None)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
 
 class ImageUploadTests(TestCase):
     """Tests for the image upload API."""

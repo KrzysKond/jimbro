@@ -82,13 +82,19 @@ class WorkoutViewSet(viewsets.ModelViewSet):
         group_member_ids = User.objects.filter(
             group_memberships__in=user_groups
         ).values_list('id', flat=True).distinct()
-        print(group_member_ids)
 
         # Retrieve workouts for users in the same groups on the specified date
         workouts = self.get_queryset().filter(
             user__in=group_member_ids, date=query_date
         )
         print(workouts, user_groups, user_groups)
+
+        # retrieve just user workouts if user is not assigned to a group
+        if workouts.exists() is False:
+            workouts = self.get_queryset().filter(
+                date=query_date,
+                user=request.user
+            )
 
         if workouts.exists():
             workout_serializer = self.get_serializer(workouts, many=True)
