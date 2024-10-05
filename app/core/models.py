@@ -1,3 +1,4 @@
+import io
 import os
 import random
 import string
@@ -10,6 +11,8 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.conf import settings
+from PIL import Image as PilImage
+from django.core.files.base import ContentFile
 
 
 def workout_image_file_path(instance, filename):
@@ -83,6 +86,17 @@ class Workout(models.Model):
     title = models.CharField(max_length=255)
     image = models.ImageField(null=True, upload_to=workout_image_file_path)
     date = models.DateField()
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            img = PilImage.open(self.image)
+            img_io = io.BytesIO()
+            img = img.convert("RGB")
+            img.save(img_io, format('JPEG'), quality=80)
+            img_file = ContentFile(img_io.getvalue(), name=self.image.name)
+            self.image = img_file
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
