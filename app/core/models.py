@@ -1,3 +1,4 @@
+import io
 import os
 import uuid
 
@@ -8,6 +9,8 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.conf import settings
+from PIL import Image as PilImage
+from django.core.files.base import ContentFile
 
 
 def workout_image_file_path(instance, filename):
@@ -16,6 +19,15 @@ def workout_image_file_path(instance, filename):
     filename = f'{uuid.uuid4()}{ext}'
 
     return os.path.join('uploads', 'workout', filename)
+
+
+def process_image(image):
+    img = PilImage.open(image)
+    img_io = io.BytesIO()
+    img = img.convert("RGB")
+    img.save(img_io, format='JPEG', quality=80)
+    img_file = ContentFile(img_io.getvalue(), name=image.name)
+    return img_file
 
 
 class UserManager(BaseUserManager):
@@ -72,6 +84,12 @@ class Workout(models.Model):
     title = models.CharField(max_length=255)
     image = models.ImageField(null=True, upload_to=workout_image_file_path)
     date = models.DateField()
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            self.image = process_image(self.image)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
