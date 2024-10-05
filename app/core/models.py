@@ -15,6 +15,15 @@ from PIL import Image as PilImage
 from django.core.files.base import ContentFile
 
 
+def process_image(image):
+    img = PilImage.open(image)
+    img_io = io.BytesIO()
+    img = img.convert("RGB")
+    img.save(img_io, format='JPEG', quality=80)
+    img_file = ContentFile(img_io.getvalue(), name=image.name)
+    return img_file
+
+
 def workout_image_file_path(instance, filename):
     """Generate new file path for workout image."""
     ext = os.path.splitext(filename)[1]
@@ -89,12 +98,7 @@ class Workout(models.Model):
 
     def save(self, *args, **kwargs):
         if self.image:
-            img = PilImage.open(self.image)
-            img_io = io.BytesIO()
-            img = img.convert("RGB")
-            img.save(img_io, format('JPEG'), quality=80)
-            img_file = ContentFile(img_io.getvalue(), name=self.image.name)
-            self.image = img_file
+            self.image = process_image(self.image)
 
         super().save(*args, **kwargs)
 
