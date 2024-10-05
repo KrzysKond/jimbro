@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import uuid
 
 from django.db import models
@@ -16,6 +18,12 @@ def workout_image_file_path(instance, filename):
     filename = f'{uuid.uuid4()}{ext}'
 
     return os.path.join('uploads', 'workout', filename)
+
+
+def create_unique_invite_code(length=6):
+    characters = string.ascii_uppercase + string.digits
+    code = ''.join(random.choice(characters) for _ in range(length))
+    return code
 
 
 class UserManager(BaseUserManager):
@@ -54,6 +62,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Group(models.Model):
     """Group model."""
     name = models.CharField(max_length=255)
+    invite_code = models.CharField(max_length=6, unique=True, default=create_unique_invite_code, null=True)
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='group_memberships')
