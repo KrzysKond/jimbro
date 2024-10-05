@@ -62,7 +62,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Group(models.Model):
     """Group model."""
     name = models.CharField(max_length=255)
-    invite_code = models.CharField(max_length=6, unique=True, default=create_unique_invite_code, null=True)
+    invite_code = models.CharField(
+        max_length=6, unique=True,
+        default=create_unique_invite_code, null=True)
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='group_memberships')

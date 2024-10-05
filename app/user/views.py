@@ -36,13 +36,17 @@ class GroupViewSet(viewsets.ModelViewSet):
     def group_by_invite_code(self, request):
         invite_code = request.query_params.get('invite_code', None)
         if invite_code is None:
-            return Response({'error': 'Invitation code is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'Invitation code is required'},
+                status=status.HTTP_400_BAD_REQUEST)
         try:
             group = Group.objects.get(invite_code=invite_code)
             serializer = self.get_serializer(group)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Group.DoesNotExist:
-            return Response({'error': 'Group not found or invalid invitation code'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {'error': 'Group not found or invalid invitation code'},
+                status=status.HTTP_404_NOT_FOUND)
 
     @action(methods=['POST'], detail=True, url_path='leave')
     def leave_group(self, request, pk=None):
