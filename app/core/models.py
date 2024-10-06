@@ -104,3 +104,9 @@ class Workout(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Message(models.Model):
+    content = models.TextField()
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

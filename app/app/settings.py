@@ -47,8 +47,19 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'core',
     'user',
+    'channels',
     'workout',
+    'chat'
 ]
+
+ASGI_APPLICATION = 'core.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default':{
+        'BACKEND':'channels.layers.InMemoryChannelLayer'
+    }
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
