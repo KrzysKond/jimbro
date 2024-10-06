@@ -9,7 +9,7 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.conf import settings
-from PIL import Image as PilImage
+from PIL import Image as PilImage, ExifTags
 from django.core.files.base import ContentFile
 
 
