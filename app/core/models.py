@@ -110,7 +110,8 @@ class Message(models.Model):
     """Message model"""
     content = models.TextField(max_length=1024)
     group = models.ForeignKey(Group, on_delete=models.PROTECT)
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL,
+                               on_delete=models.PROTECT)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

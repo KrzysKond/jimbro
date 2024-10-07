@@ -1,23 +1,12 @@
 from channels.testing import WebsocketCommunicator
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from channels.layers import get_channel_layer
 from django.urls import reverse
 from asgiref.sync import sync_to_async
 from core.models import Group, Message
-from groupchat.routing import websocket_urlpatterns
 from groupchat.consumers import GroupChatConsumer
 from rest_framework.test import APIClient
 from rest_framework import status
-
-User = get_user_model()
-
-from channels.testing import WebsocketCommunicator
-from django.contrib.auth import get_user_model
-from django.test import TestCase
-from asgiref.sync import sync_to_async
-from core.models import Group
-from groupchat.consumers import GroupChatConsumer
 
 User = get_user_model()
 
@@ -56,7 +45,8 @@ class GroupChatConsumerTestCase(TestCase):
             f"/ws/chat/{self.group.id}/"
         )
 
-        communicator.scope['url_route'] = {'kwargs': {'group_id': self.group.id}}
+        communicator.scope['url_route'] = {
+            'kwargs': {'group_id': self.group.id}}
 
         # Simulate user authentication for connection
         communicator.scope['user'] = self.user
@@ -72,7 +62,8 @@ class GroupChatConsumerTestCase(TestCase):
             f"/ws/chat/{self.group.id}/"
         )
 
-        communicator.scope['url_route'] = {'kwargs': {'group_id': self.group.id}}
+        communicator.scope['url_route'] = {
+            'kwargs': {'group_id': self.group.id}}
 
         # Simulate user authentication for connection
         communicator.scope['user'] = self.user
@@ -94,7 +85,8 @@ class GroupChatConsumerTestCase(TestCase):
         await communicator.disconnect()
 
     async def test_connect_not_member(self):
-        """Test WebSocket connection for a user who is not a member of the group."""
+        """Test WebSocket connection for
+         a user who is not a member of the group."""
         another_user = await sync_to_async(create_user)(
             email='other_user@example.com',
             password='otherpassword'
@@ -105,7 +97,8 @@ class GroupChatConsumerTestCase(TestCase):
             f"/ws/chat/{self.group.id}/"
         )
 
-        communicator.scope['url_route'] = {'kwargs': {'group_id': self.group.id}}
+        communicator.scope['url_route'] = {
+            'kwargs': {'group_id': self.group.id}}
 
         # Simulate user authentication for connection
         communicator.scope['user'] = another_user
@@ -130,7 +123,9 @@ class GroupMessagesViewTestCase(TestCase):
     def test_get_group_messages(self):
         """""""Test retrieving group messages."""""""
         message = Message.objects.create(
-            group=self.group, sender=self.user, content='Test Message'
+            group=self.group,
+            sender=self.user,
+            content='Test Message'
         )
 
         url = reverse('group_messages', kwargs={'group_id': self.group.id})
@@ -138,7 +133,7 @@ class GroupMessagesViewTestCase(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['data']), 1)
-        self.assertEqual(response.data['data'][0]['content'], 'Test Message')
+        self.assertEqual(response.data['data'][0]['content'], message.content)
 
     def test_get_group_messages_not_a_member(self):
         """""""Test retrieving group messages when user is not a member."""""""
@@ -151,7 +146,9 @@ class GroupMessagesViewTestCase(TestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("You are not a member of this group.", str(response.data))
+        self.assertIn(
+            "You are not a member of this group.",
+            str(response.data))
 
 
 class GroupListViewTestCase(TestCase):
@@ -162,7 +159,9 @@ class GroupListViewTestCase(TestCase):
         self.user = User.objects.create_user(
             email='user@example.com', password='testpassword'
         )
-        self.group = Group.objects.create(name='Test Group', invite_code='ABC123')
+        self.group = Group.objects.create(
+            name='Test Group',
+            invite_code='ABC123')
         self.group.members.add(self.user)
         self.client.force_authenticate(user=self.user)
 

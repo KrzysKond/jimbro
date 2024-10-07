@@ -3,9 +3,9 @@ import json
 from core.models import Group, Message
 from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
-from channels.exceptions import DenyConnection
 
 User = get_user_model()
+
 
 class GroupChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -37,12 +37,16 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         message_content = data['message']
         sender_id = data['sender_id']
 
-        # Check if the sender is a member of the group before saving the message
-        if not await self.is_member(self.group_id, sender_id):
+    # Check if the sender is a member of the group before saving the message
+        if not await self.is_member(
+                self.group_id,
+                sender_id):
             return  # Do not process message if sender is not a member
 
         # Save the message to the database
-        await sync_to_async(self.save_message)(sender_id, self.group_id, message_content)
+        await sync_to_async(self.save_message)(
+            sender_id,
+            self.group_id, message_content)
 
         # Broadcast the message to the group
         await self.channel_layer.group_send(
