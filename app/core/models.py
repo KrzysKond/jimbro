@@ -107,6 +107,11 @@ class Workout(models.Model):
 
 
 class Message(models.Model):
-    content = models.TextField()
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    """Message model"""
+    content = models.TextField(max_length=1024)
+    group = models.ForeignKey(Group, on_delete=models.PROTECT)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.name} to {self.group.name}: {self.content[:20]}"

@@ -35,6 +35,7 @@ ALLOWED_HOSTS.extend(
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,17 +46,18 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
+    'channels',
+
     'core',
     'user',
-    'channels',
     'workout',
-    'chat'
+    'groupchat',
 ]
 
-ASGI_APPLICATION = 'core.asgi.application'
+ASGI_APPLICATION = 'app.asgi.application'
 
 CHANNEL_LAYERS = {
-    'default':{
+    'default': {
         'BACKEND':'channels.layers.InMemoryChannelLayer'
     }
 }
