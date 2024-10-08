@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -9,7 +10,8 @@ User = get_user_model()
 
 
 class GroupMessagesView(APIView):
-    permission_classes = (IsAuthenticated,)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, group_id):
         """Retrieve all messages for a specific group,
@@ -27,7 +29,7 @@ class GroupMessagesView(APIView):
                 status=status.HTTP_403_FORBIDDEN)
 
         messages = list(Message.objects.filter(group__id=group_id).values(
-            'id', 'group', 'sender', 'content', 'timestamp'))
+            'id', 'sender', 'content', 'timestamp'))
 
         response_content = {
             'status': True,
@@ -39,7 +41,8 @@ class GroupMessagesView(APIView):
 
 
 class GroupListView(APIView):
-    permission_classes = (IsAuthenticated,)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """Retrieve all groups for the authenticated user,

@@ -73,7 +73,6 @@ class GroupChatConsumerTestCase(TestCase):
         # Simulate sending a message
         message_data = {
             'message': 'Hello, World!',
-            'sender_id': self.user.id
         }
         await communicator.send_json_to(message_data)
 
