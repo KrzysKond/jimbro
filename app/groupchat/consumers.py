@@ -37,7 +37,8 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message_content = data['content']
-        sender_id = self.scope['user'].id
+        user = self.scope['user']
+        sender_id = user.id
 
     # Check if the sender is a member of the group before saving the message
         if not await self.is_member(
@@ -57,6 +58,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
                 'type': 'chat_message',
                 'message': message_content,
                 'sender_id': sender_id,
+                'sender_name': user.name
             }
         )
 
@@ -65,6 +67,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'content': event['message'],
             'sender_id': event['sender_id'],
+            'sender_name': event['sender_name']
         }))
 
     @database_sync_to_async

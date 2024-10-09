@@ -28,13 +28,30 @@ class GroupMessagesView(APIView):
                 "message": "You are not a member of this group."},
                 status=status.HTTP_403_FORBIDDEN)
 
-        messages = list(Message.objects.filter(group__id=group_id).values(
-            'id', 'sender', 'content', 'timestamp'))
+        messages = list(Message.objects
+                        .filter(group__id=group_id).order_by('timestamp')
+                        .values(
+                            'id',
+                            'sender__id',
+                            'sender__name',
+                            'content',
+                            'timestamp'))
+
+        transformed_messages = []
+        for msg in messages:
+            transformed_msg = {
+                '-id': msg['id'],
+                'sender_id': msg['sender__id'],
+                'sender_name': msg['sender__name'],
+                'content': msg['content'],
+                'timestamp': msg['timestamp'],
+            }
+            transformed_messages.append(transformed_msg)
 
         response_content = {
             'status': True,
             'message': 'Group Messages Retrieved',
-            'data': messages
+            'data': transformed_messages
         }
 
         return Response(response_content, status=status.HTTP_200_OK)

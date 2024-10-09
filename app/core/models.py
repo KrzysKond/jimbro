@@ -113,6 +113,3 @@ class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL,
                                on_delete=models.PROTECT)
     timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.sender.name} to {self.group.name}: {self.content[:20]}"
