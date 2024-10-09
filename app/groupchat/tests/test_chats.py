@@ -72,13 +72,13 @@ class GroupChatConsumerTestCase(TestCase):
 
         # Simulate sending a message
         message_data = {
-            'message': 'Hello, World!',
+            'content': 'Hello, World!',
         }
         await communicator.send_json_to(message_data)
 
         # Check if the group received the message
         response = await communicator.receive_json_from()
-        self.assertEqual(response['message'], 'Hello, World!')
+        self.assertEqual(response['content'], 'Hello, World!')
         self.assertEqual(response['sender_id'], self.user.id)
 
         await communicator.disconnect()

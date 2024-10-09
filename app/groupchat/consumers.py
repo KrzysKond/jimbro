@@ -36,7 +36,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message_content = data['message']
+        message_content = data['content']
         sender_id = self.scope['user'].id
 
     # Check if the sender is a member of the group before saving the message
