@@ -20,6 +20,11 @@ def workout_detail(workout_id):
     return reverse('workout:workout-detail', args=[workout_id])
 
 
+def like_workout_url(workout_id):
+    """Create and return a workout like URL"""
+    return reverse('workout:workout-like', args=[workout_id])
+
+
 def image_upload_url(workout_id):
     """Create and return an image uplopad URL"""
     return reverse('workout:workout-upload-image', args=[workout_id])
@@ -73,7 +78,7 @@ class PrivateWorkoutAPITests(TestCase):
         res = self.client.post(WORKOUT_URL, {
             'title': title,
             'date': date.today()},
-            format='json')
+                               format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         workout = Workout.objects.get(id=res.data['id'])
         self.assertEqual(workout.date, workout.date)
@@ -154,3 +159,27 @@ class ImageUploadTests(TestCase):
         res = self.client.post(url, payload, format='multipart')
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_like_workout(self):
+        """Test liking a workout."""
+        workout = create_workout(user=self.user)
+        url = like_workout_url(workout.id)
+
+        res = self.client.post(url)
+        workout.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(workout.fires, 1)
+        self.assertEqual(res.data['fires'], 1)
+
+    def test_multiple_likes_increment(self):
+        """Test that likes increment correctly with multiple requests."""
+        workout = create_workout(user=self.user)
+        url = like_workout_url(workout.id)
+
+        for _ in range(3):
+            res = self.client.post(url)
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        workout.refresh_from_db()
+        self.assertEqual(workout.fires, 3)

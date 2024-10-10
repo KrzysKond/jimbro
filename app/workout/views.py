@@ -58,6 +58,14 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['POST'], detail=True, url_path='like')
+    def like(self, request, pk=None):
+        """Hande liking a workout"""
+        workout = self.get_object()
+        workout.fires += 1
+        workout.save()
+        return Response({'fires': workout.fires}, status=status.HTTP_200_OK)
+
     @action(methods=['GET'], detail=False, url_path='get-by-date')
     def get_by_date(self, request, pk=None):
         date_str = request.query_params.get('date', None)

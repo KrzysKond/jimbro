@@ -95,6 +95,7 @@ class Workout(models.Model):
     title = models.CharField(max_length=255)
     image = models.ImageField(null=True, upload_to=workout_image_file_path)
     date = models.DateField()
+    fires = models.PositiveIntegerField(default=0)
 
     def save(self, *args, **kwargs):
         if self.image:
