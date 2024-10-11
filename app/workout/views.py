@@ -7,12 +7,12 @@ Views for the workout APIs
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import Workout
+from core.models import Workout, Comment
 from rest_framework.response import Response
 from workout import serializers
 
@@ -130,3 +130,37 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'No workouts found for the given date.'},
                         status=status.HTTP_404_NOT_FOUND)
+
+
+class CommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = serializers.CommentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_workout(self):
+        workout_id = self.kwargs.get('workout_id')
+        return Workout.objects.get(id=workout_id)
+
+    def get_queryset(self):
+        workout = self.get_workout()
+        return Comment.objects.filter(workout=workout)
+
+    def perform_create(self, serializer):
+        workout = self.get_workout()
+        serializer.save(author=self.request.user, workout=workout)
+
+
+class CommentDetailView(generics.RetrieveDestroyAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = serializers.CommentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        comment = self.get_object()
+        text = "You do not have permission to delete this comment."
+        if request.user != comment.author and not request.user.is_staff:
+            return Response(
+                {'detail': text},
+                status=status.HTTP_403_FORBIDDEN)
+        return super().delete(request, *args, **kwargs)

@@ -118,3 +118,14 @@ class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL,
                                on_delete=models.PROTECT)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+
+class Comment(models.Model):
+    """Comments model"""
+    text = models.TextField()
+    workout = models.ForeignKey(
+        Workout,
+        on_delete=models.CASCADE,
+        related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -3,7 +3,7 @@ Serializer for workout APIs
 """
 
 from rest_framework import serializers
-from core.models import Workout
+from core.models import Workout, Comment
 
 
 class WorkoutSerializer(serializers.ModelSerializer):
@@ -29,3 +29,13 @@ class WorkoutImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image']
         read_only_fields = ['id']
         extra_kwargs = {'image': {'required': 'True'}}
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    workout = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'workout', 'author', 'text', 'created_at']
+        read_only_fields = ['id', 'author', 'created_at']
