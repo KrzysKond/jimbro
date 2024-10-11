@@ -96,6 +96,10 @@ class Workout(models.Model):
     image = models.ImageField(null=True, upload_to=workout_image_file_path)
     date = models.DateField()
     fires = models.PositiveIntegerField(default=0)
+    liked_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='liked_workouts',
+        blank=True)
 
     def save(self, *args, **kwargs):
         if self.image:

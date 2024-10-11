@@ -13,7 +13,7 @@ class WorkoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workout
 
-        fields = ['id', 'title', 'date', 'username']
+        fields = ['id', 'title', 'date', 'username', 'liked_by', 'fires']
         read_only_fields = ['id']
 
     def create(self, validated_data):

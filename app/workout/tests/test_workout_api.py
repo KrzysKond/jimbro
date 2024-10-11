@@ -20,9 +20,9 @@ def workout_detail(workout_id):
     return reverse('workout:workout-detail', args=[workout_id])
 
 
-def like_workout_url(workout_id):
+def toggle_like_url(workout_id):
     """Create and return a workout like URL"""
-    return reverse('workout:workout-like', args=[workout_id])
+    return reverse('workout:workout-toggle-like', args=[workout_id])
 
 
 def image_upload_url(workout_id):
@@ -100,6 +100,7 @@ class PrivateWorkoutAPITests(TestCase):
         serializer = WorkoutSerializer(workouts, many=True)
         for workout in res.data:
             workout.pop('image', None)
+            workout.pop('isLiked')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -117,6 +118,7 @@ class PrivateWorkoutAPITests(TestCase):
         serializer = WorkoutSerializer(workouts, many=True)
         for workout in res.data:
             workout.pop('image', None)
+            workout.pop('isLiked')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -160,26 +162,21 @@ class ImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_like_workout(self):
-        """Test liking a workout."""
+    def test_toggle_like_workout(self):
+        """Test liking and unliking a workout (toggle behavior)."""
         workout = create_workout(user=self.user)
-        url = like_workout_url(workout.id)
+        url = toggle_like_url(workout.id)
 
+        # First like
         res = self.client.post(url)
         workout.refresh_from_db()
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(workout.fires, 1)
         self.assertEqual(res.data['fires'], 1)
 
-    def test_multiple_likes_increment(self):
-        """Test that likes increment correctly with multiple requests."""
-        workout = create_workout(user=self.user)
-        url = like_workout_url(workout.id)
-
-        for _ in range(3):
-            res = self.client.post(url)
-            self.assertEqual(res.status_code, status.HTTP_200_OK)
-
+        # Unlike (toggle)
+        res = self.client.post(url)
         workout.refresh_from_db()
-        self.assertEqual(workout.fires, 3)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(workout.fires, 0)
+        self.assertEqual(res.data['fires'], 0)

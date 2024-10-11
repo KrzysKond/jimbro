@@ -58,11 +58,16 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['POST'], detail=True, url_path='like')
-    def like(self, request, pk=None):
+    @action(methods=['POST'], detail=True, url_path='toggle_like')
+    def toggle_like(self, request, pk=None):
         """Hande liking a workout"""
         workout = self.get_object()
-        workout.fires += 1
+        if request.user not in workout.liked_by.all():
+            workout.fires += 1
+            workout.liked_by.add(request.user)
+        else:
+            workout.liked_by.remove(request.user)
+            workout.fires -= 1
         workout.save()
         return Response({'fires': workout.fires}, status=status.HTTP_200_OK)
 
@@ -110,6 +115,10 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
             for workout, workout_data in (
                     zip(workouts, workout_serializer.data)):
+                if request.user in workout.liked_by.all():
+                    workout_data['isLiked'] = True
+                else:
+                    workout_data['isLiked'] = False
                 image_serializer = serializers.WorkoutImageSerializer(workout)
                 image_url = image_serializer.data.get('image', None)
                 if image_url:
