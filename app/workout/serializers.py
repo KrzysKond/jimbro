@@ -13,8 +13,10 @@ class WorkoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workout
 
-        fields = ['id', 'title', 'date', 'username', 'liked_by', 'fires']
-        read_only_fields = ['id']
+        fields = ['id', 'title', 'date',
+                  'username', 'liked_by',
+                  'fires', 'comments_count']
+        read_only_fields = ['id', 'comments_count']
 
     def create(self, validated_data):
         workout = Workout.objects.create(**validated_data)

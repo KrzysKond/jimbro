@@ -99,6 +99,7 @@ class Workout(models.Model):
     image = models.ImageField(null=True, upload_to=workout_image_file_path)
     date = models.DateField()
     fires = models.PositiveIntegerField(default=0)
+    comments_count = models.PositiveIntegerField(default=0)
     liked_by = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='liked_workouts',
@@ -132,3 +133,17 @@ class Comment(models.Model):
         related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        is_new_comment = self.pk is None
+        super().save(*args, **kwargs)
+
+        if is_new_comment:
+            self.workout.comments_count += 1
+            self.workout.save()
+
+    def delete(self, *args, **kwargs):
+        workout = self.workout
+        workout.comments_count -= 1
+        workout.save()  # Update the count before deleting
+        super().delete(*args, **kwargs)

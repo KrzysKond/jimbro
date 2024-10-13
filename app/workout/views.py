@@ -143,7 +143,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         workout = self.get_workout()
-        return Comment.objects.filter(workout=workout)
+        return Comment.objects.filter(workout=workout).order_by('-created_at')
 
     def perform_create(self, serializer):
         workout = self.get_workout()
