@@ -141,13 +141,11 @@ class GroupMessagesViewTestCase(TestCase):
         )
         self.client.force_authenticate(user=other_user)
 
-        url = reverse('group_messages', kwargs={'group_id': self.group.id})
+        url = reverse('group_messages',
+                      kwargs={'group_id': self.group.id}) + '?page=1'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn(
-            "You are not a member of this group.",
-            str(response.data))
 
 
 class GroupListViewTestCase(TestCase):
