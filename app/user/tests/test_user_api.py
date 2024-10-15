@@ -1,6 +1,9 @@
 """
 Tests for the user API.
 """
+import os
+import tempfile
+from PIL import Image
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -155,3 +158,57 @@ class PrivateUserApiTests(TestCase):
         self.assertEqual(self.user.name, payload['name'])
         self.assertTrue(self.user.check_password(payload['password']))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_get_user_info(self):
+        """Test retrieving user information."""
+        url = reverse('user:user-info')
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['email'], self.user.email)
+
+    def test_get_user_info_invalid_user(self):
+        url = reverse('user:user-info') + '?user_id=9999'
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(res.data['error'], 'User not found')
+
+
+class UserImageTests(TestCase):
+    """Tests for the user API."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            'user@example.com',
+            'password123',
+        )
+        self.client.force_authenticate(self.user)
+
+    def tearDown(self):
+        if hasattr(self.user, 'profile_picture'):
+            self.user.profile_picture.delete()
+
+    def test_upload_image(self):
+        """Test uploading an image for the user."""
+        url = reverse('user:upload-image')
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='JPEG')
+            image_file.seek(0)
+            payload = {'profile_picture': image_file}
+            res = self.client.post(url, payload, format='multipart')
+
+        self.user.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('profile_picture', res.data)
+        self.assertTrue(os.path.exists(self.user.profile_picture.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid image."""
+        url = reverse('user:upload-image')
+        payload = {'image': 'notanimage'}
+        res = self.client.post(url, payload, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

@@ -4,7 +4,7 @@
 """
 Views for the workout APIs
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status, generics
@@ -130,6 +130,51 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'No workouts found for the given date.'},
                         status=status.HTTP_404_NOT_FOUND)
+
+    @action(methods=['GET'], detail=False, url_path='last-week-workouts')
+    def get_last_week_workouts(self, request):
+        """Retrieve workouts for a specified user or
+        the authenticated user from the last week."""
+        user_id = request.query_params.get('user_id', None)
+        today = datetime.today().date()
+        start_date = today - timedelta(days=7)
+
+        if user_id:
+            try:
+                user = get_user_model().objects.get(id=user_id)
+            except get_user_model().DoesNotExist:
+                return Response({'detail': 'User not found.'},
+                                status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
+
+        workouts = self.get_queryset().filter(
+            user=user,
+            date__range=[start_date, today]
+        ).order_by('-date')
+
+        if workouts.exists():
+            workout_serializer = self.get_serializer(workouts, many=True)
+            combined_data = []
+
+            for workout, workout_data in zip(workouts,
+                                             workout_serializer.data):
+                if request.user in workout.liked_by.all():
+                    workout_data['isLiked'] = True
+                else:
+                    workout_data['isLiked'] = False
+                image_serializer = serializers.WorkoutImageSerializer(workout)
+                image_url = image_serializer.data.get('image', None)
+                if image_url:
+                    image_url = request.build_absolute_uri(image_url)
+                workout_data['image'] = image_url
+                combined_data.append(workout_data)
+
+            return Response(combined_data, status=status.HTTP_200_OK)
+
+        return Response({
+            'detail': 'No workouts found for the user in the last week.'},
+             status=status.HTTP_404_NOT_FOUND)
 
 
 class CommentListCreateView(generics.ListCreateAPIView):

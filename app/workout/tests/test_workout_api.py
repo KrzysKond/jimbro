@@ -1,15 +1,15 @@
 import os
 import tempfile
-
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from core.models import Workout, Group
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 from workout.serializers import WorkoutSerializer
-from datetime import date
+from datetime import date, timedelta
 
 WORKOUT_URL = reverse('workout:workout-list')
 WORKOUT_BY_DATE = reverse('workout:workout-get-by-date')
@@ -18,6 +18,11 @@ WORKOUT_BY_DATE = reverse('workout:workout-get-by-date')
 def workout_detail(workout_id):
     """Create and return an workout detail URL"""
     return reverse('workout:workout-detail', args=[workout_id])
+
+
+def last_week_workouts_url():
+    """Create and return URL for retrieving last week's workouts."""
+    return reverse('workout:workout-get-last-week-workouts')
 
 
 def toggle_like_url(workout_id):
@@ -122,6 +127,70 @@ class PrivateWorkoutAPITests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_retrieve_last_week_workouts_authenticated_user(self):
+        """Test retrieving last week's workouts for the authenticated user."""
+        today = timezone.now().date()
+        # Creating workouts within and outside of the last week range
+        create_workout(user=self.user, given_date=today - timedelta(days=1))
+        create_workout(user=self.user, given_date=today - timedelta(days=8))
+
+        # Fetch workouts
+        res = self.client.get(last_week_workouts_url())
+        workouts = Workout.objects.filter(
+            user=self.user,
+            date__range=[today - timedelta(days=7), today]
+        ).order_by('-date')
+        serializer = WorkoutSerializer(workouts, many=True)
+
+        # Exclude image and isLiked fields from comparison
+        for workout in res.data:
+            workout.pop('image', None)
+            workout.pop('isLiked')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_retrieve_last_week_workouts_other_user(self):
+        """Test retrieving last week's workouts for another specified user."""
+        other_user = get_user_model().objects.create_user(
+            'other@example.com',
+            'password123'
+        )
+        today = timezone.now().date()
+        create_workout(user=other_user, given_date=today - timedelta(days=3))
+        create_workout(user=self.user, given_date=today - timedelta(days=1))
+
+        res = self.client.get(
+            last_week_workouts_url(),
+            {'user_id': other_user.id})
+        workouts = Workout.objects.filter(
+            user=other_user,
+            date__range=[today - timedelta(days=7), today]
+        ).order_by('-date')
+        serializer = WorkoutSerializer(workouts, many=True)
+
+        # Exclude image and isLiked fields from comparison
+        for workout in res.data:
+            workout.pop('image', None)
+            workout.pop('isLiked')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_last_week_workouts_user_not_found(self):
+        """Test error response when specified user does not exist."""
+        res = self.client.get(last_week_workouts_url(), {'user_id': -1})
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(res.data['detail'], 'User not found.')
+
+    def test_last_week_workouts_no_workouts_found(self):
+        """Test retrieving last week's workouts returns empty for no data."""
+        res = self.client.get(last_week_workouts_url())
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            res.data['detail'],
+            'No workouts found for the user in the last week.')
 
 
 class ImageUploadTests(TestCase):

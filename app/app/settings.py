@@ -50,7 +50,7 @@ ASGI_APPLICATION = 'app.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND':'channels.layers.InMemoryChannelLayer'
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
     }
 }
 

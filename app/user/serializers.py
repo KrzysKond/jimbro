@@ -27,7 +27,27 @@ class UserNameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['name']
+        fields = ['name', 'id']
+        read_only_fields = ['id']
+
+
+class UserInfoSerializer(serializers.ModelSerializer):
+    """Serializer for basic user info"""
+
+    class Meta:
+        model = get_user_model()
+        fields = ['email', 'id', 'name']
+        read_only_fields = ['id', 'email', 'name']
+
+
+class UserImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading images"""
+
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'profile_picture']
+        read_only_fields = ['id']
+        extra_kwargs = {'profile_picture': {'required': True}}
 
 
 class UserSerializer(serializers.ModelSerializer):

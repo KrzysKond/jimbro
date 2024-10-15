@@ -32,6 +32,14 @@ def workout_image_file_path(instance, filename):
     return os.path.join('uploads', 'workout', filename)
 
 
+def user_image_file_path(instance, filename):
+    """Generate new file path for user profile pic."""
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+
+    return os.path.join('uploads', 'user', filename)
+
+
 def create_unique_invite_code(length=6):
     characters = string.ascii_uppercase + string.digits
     code = ''.join(random.choice(characters) for _ in range(length))
@@ -65,10 +73,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    profile_picture = models.ImageField(
+        null=True,
+        upload_to=user_image_file_path)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+    def save(self, *args, **kwargs):
+        if self.profile_picture:
+            self.profile_picture = process_image(self.profile_picture)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
