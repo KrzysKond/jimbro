@@ -14,7 +14,9 @@ from rest_framework.permissions import IsAuthenticated
 from user.serializers import (
     UserSerializer,
     AuthTokenSerializer,
-    GroupSerializer
+    GroupSerializer,
+    UserInfoSerializer,
+    UserImageSerializer
 )
 
 from core.models import Group, User
@@ -31,6 +33,22 @@ class GroupViewSet(viewsets.ModelViewSet):
         groups = Group.objects.filter(members=request.user)
         serializer = self.get_serializer(groups, many=True)
         return Response(serializer.data)
+
+    @action(methods=['GET'], detail=False, url_path='group-by-invite-code')
+    def group_by_invite_code(self, request):
+        invite_code = request.query_params.get('invite_code', None)
+        if invite_code is None:
+            return Response(
+                {'error': 'Invitation code is required'},
+                status=status.HTTP_400_BAD_REQUEST)
+        try:
+            group = Group.objects.get(invite_code=invite_code)
+            serializer = self.get_serializer(group)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Group.DoesNotExist:
+            return Response(
+                {'error': 'Group not found or invalid invitation code'},
+                status=status.HTTP_404_NOT_FOUND)
 
     @action(methods=['POST'], detail=True, url_path='leave')
     def leave_group(self, request, pk=None):
@@ -89,3 +107,48 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         return User.objects.filter(id=self.request.user.id)
+
+
+class UserViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserInfoSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+
+    @action(methods=['POST'], detail=False, url_path='upload-image')
+    def upload_image(self, request, pk=None):
+        """Upload an image for the authenticated user."""
+        serializer = UserImageSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = request.user
+            user.profile_picture = serializer.validated_data['profile_picture']
+            user.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=False)
+    def get_user_info(self, request):
+        """Retrieve basic information about a given user
+        or the authenticated user if no ID is provided."""
+        user_id = request.query_params.get('user_id', None)
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'},
+                                status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
+
+        serializer = UserInfoSerializer(user)
+        image_serializer = UserImageSerializer(user)
+
+        image_url = image_serializer.data.get('profile_picture', None)
+        if image_url:
+            image_url = request.build_absolute_uri(image_url)
+
+        user_data = serializer.data
+        user_data['profile_picture'] = image_url
+
+        return Response(user_data, status=status.HTTP_200_OK)

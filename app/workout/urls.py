@@ -17,4 +17,8 @@ app_name = 'workout'
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('workout/<int:workout_id>/comments/',
+         views.CommentListCreateView.as_view(), name='workout-comment'),
+    path('workout/<int:workout_id>/comments/<int:pk>/',
+         views.CommentDetailView.as_view(), name='comment-detail'),
 ]

@@ -1,6 +1,8 @@
 """
 Serialzers for the user api view
 """
+import string
+import random
 
 from django.contrib.auth import (
     get_user_model,
@@ -12,12 +14,40 @@ from rest_framework import serializers
 from core.models import Group
 
 
+def generate_unique_invite_code(length=6):
+    characters = string.ascii_uppercase + string.digits
+    while True:
+        invite_code = ''.join(random.choice(characters) for _ in range(length))
+        if not Group.objects.filter(invite_code=invite_code).exists():
+            return invite_code
+
+
 class UserNameSerializer(serializers.ModelSerializer):
     """Serializer to return just the name of the user"""
 
     class Meta:
         model = get_user_model()
-        fields = ['name']
+        fields = ['name', 'id']
+        read_only_fields = ['id']
+
+
+class UserInfoSerializer(serializers.ModelSerializer):
+    """Serializer for basic user info"""
+
+    class Meta:
+        model = get_user_model()
+        fields = ['email', 'id', 'name']
+        read_only_fields = ['id', 'email', 'name']
+
+
+class UserImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading images"""
+
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'profile_picture']
+        read_only_fields = ['id']
+        extra_kwargs = {'profile_picture': {'required': True}}
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -48,8 +78,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ['id', 'name', 'members']
-        read_only_fields = ['id']
+        fields = ['id', 'name', 'members', 'invite_code']
+        read_only_fields = ['id', 'invite_code']
 
     def create(self, validated_data):
         members_data = validated_data.pop('members', None)

@@ -4,15 +4,15 @@
 """
 Views for the workout APIs
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import Workout
+from core.models import Workout, Comment
 from rest_framework.response import Response
 from workout import serializers
 
@@ -58,6 +58,19 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['POST'], detail=True, url_path='toggle_like')
+    def toggle_like(self, request, pk=None):
+        """Hande liking a workout"""
+        workout = self.get_object()
+        if request.user not in workout.liked_by.all():
+            workout.fires += 1
+            workout.liked_by.add(request.user)
+        else:
+            workout.liked_by.remove(request.user)
+            workout.fires -= 1
+        workout.save()
+        return Response({'fires': workout.fires}, status=status.HTTP_200_OK)
+
     @action(methods=['GET'], detail=False, url_path='get-by-date')
     def get_by_date(self, request, pk=None):
         date_str = request.query_params.get('date', None)
@@ -102,6 +115,10 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
             for workout, workout_data in (
                     zip(workouts, workout_serializer.data)):
+                if request.user in workout.liked_by.all():
+                    workout_data['isLiked'] = True
+                else:
+                    workout_data['isLiked'] = False
                 image_serializer = serializers.WorkoutImageSerializer(workout)
                 image_url = image_serializer.data.get('image', None)
                 if image_url:
@@ -113,3 +130,82 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'No workouts found for the given date.'},
                         status=status.HTTP_404_NOT_FOUND)
+
+    @action(methods=['GET'], detail=False, url_path='last-week-workouts')
+    def get_last_week_workouts(self, request):
+        """Retrieve workouts for a specified user or
+        the authenticated user from the last week."""
+        user_id = request.query_params.get('user_id', None)
+        today = datetime.today().date()
+        start_date = today - timedelta(days=7)
+
+        if user_id:
+            try:
+                user = get_user_model().objects.get(id=user_id)
+            except get_user_model().DoesNotExist:
+                return Response({'detail': 'User not found.'},
+                                status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
+
+        workouts = self.get_queryset().filter(
+            user=user,
+            date__range=[start_date, today]
+        ).order_by('-date')
+
+        if workouts.exists():
+            workout_serializer = self.get_serializer(workouts, many=True)
+            combined_data = []
+
+            for workout, workout_data in zip(workouts,
+                                             workout_serializer.data):
+                if request.user in workout.liked_by.all():
+                    workout_data['isLiked'] = True
+                else:
+                    workout_data['isLiked'] = False
+                image_serializer = serializers.WorkoutImageSerializer(workout)
+                image_url = image_serializer.data.get('image', None)
+                if image_url:
+                    image_url = request.build_absolute_uri(image_url)
+                workout_data['image'] = image_url
+                combined_data.append(workout_data)
+
+            return Response(combined_data, status=status.HTTP_200_OK)
+
+        return Response({
+            'detail': 'No workouts found for the user in the last week.'},
+             status=status.HTTP_404_NOT_FOUND)
+
+
+class CommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = serializers.CommentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_workout(self):
+        workout_id = self.kwargs.get('workout_id')
+        return Workout.objects.get(id=workout_id)
+
+    def get_queryset(self):
+        workout = self.get_workout()
+        return Comment.objects.filter(workout=workout).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        workout = self.get_workout()
+        serializer.save(author=self.request.user, workout=workout)
+
+
+class CommentDetailView(generics.RetrieveDestroyAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = serializers.CommentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        comment = self.get_object()
+        text = "You do not have permission to delete this comment."
+        if request.user != comment.author and not request.user.is_staff:
+            return Response(
+                {'detail': text},
+                status=status.HTTP_403_FORBIDDEN)
+        return super().delete(request, *args, **kwargs)
