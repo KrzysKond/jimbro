@@ -4,6 +4,7 @@ Views for the user API
 from rest_framework import (
     generics, authentication,
     permissions, viewsets, status)
+from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
@@ -20,6 +21,8 @@ from user.serializers import (
 )
 
 from core.models import Group, User
+
+from core.aws_sns import create_endpoint
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -76,7 +79,7 @@ class GroupViewSet(viewsets.ModelViewSet):
         if user in group.members.all():
             return Response(
                 {'detail': 'User is already a member of this group.'},
-                status=status.HTTP_400_BAD_REQUEST)
+                status=status.HTTP_409_CONFLICT)
 
         group.members.add(user)
         return Response({'detail': 'User added to the group.'},
@@ -89,9 +92,22 @@ class CreateUserView(generics.CreateAPIView):
 
 
 class CreateUserTokenView(ObtainAuthToken):
-    """Create a new token for user"""
+    """Create a new token for user and register the device."""
     serializer_class = AuthTokenSerializer
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+    def post(self, request, *args, **kwargs):
+        """Override post method to create token and register device."""
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+
+        device_token = request.data.get('device_token')
+        if device_token:
+            create_endpoint(device_token)
+        return Response({'token': token.key}, status=status.HTTP_200_OK)
 
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
@@ -152,3 +168,26 @@ class UserViewSet(viewsets.ViewSet):
         user_data['profile_picture'] = image_url
 
         return Response(user_data, status=status.HTTP_200_OK)
+
+    @action(methods=['GET'], detail=False, url_path='profile-picture')
+    def get_profile_picture(self, request):
+        """Fetch only the profile picture
+         of the authenticated user or specified user."""
+        user_id = request.query_params.get('user_id', None)
+
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'},
+                                status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = request.user
+
+        if user.profile_picture:
+            image_url = request.build_absolute_uri(user.profile_picture.url)
+            return Response({'profile_picture': image_url},
+                            status=status.HTTP_200_OK)
+
+        return Response({'profile_picture': None},
+                        status=status.HTTP_404_NOT_FOUND)

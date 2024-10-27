@@ -85,6 +85,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'app.wsgi.application'
 
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_REGION_NAME = os.getenv('AWS_REGION_NAME', 'eu-central-1')
+AWS_SNS_PLATFORM_APPLICATION_ARN = os.getenv('AWS_SNS_PLATFORM_APPLICATION_ARN')
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -129,6 +133,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
 
 
 # Static files (CSS, JavaScript, Images)

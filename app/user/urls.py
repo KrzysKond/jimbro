@@ -15,5 +15,8 @@ urlpatterns = [
         {'get': 'get_user_info'}), name='user-info'),
     path('info/upload-image/', views.UserViewSet.as_view(
         {'post': 'upload_image'}), name='upload-image'),
+    path('info/profile-picture/',
+         views.UserViewSet.as_view({'get': 'get_profile_picture'}),
+         name='profile-picture'),
     path('', include(router.urls)),
 ]
