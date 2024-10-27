@@ -98,7 +98,10 @@ class CreateUserTokenView(ObtainAuthToken):
 
     def post(self, request, *args, **kwargs):
         """Override post method to create token and register device."""
-        serializer = self.serializer_class(data=request.data)
+        auth_data = {key: value for key,
+        value in request.data.items() if key != 'device_token'}
+
+        serializer = self.serializer_class(data=auth_data)
         serializer.is_valid(raise_exception=True)
 
         user = serializer.validated_data['user']
