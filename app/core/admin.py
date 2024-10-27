@@ -45,4 +45,20 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
+class GroupAdmin(admin.ModelAdmin):
+    """Define the admin pages for groups."""
+    list_display = ['name']
+    search_fields = ['name']
+    filter_horizontal = ['members']
+
+
+class WorkoutAdmin(admin.ModelAdmin):
+    """Define the admin pages for workouts."""
+    list_display = ['title', 'user', 'date']
+    search_fields = ['title', 'user__email']
+    list_filter = ['date', 'user']
+
+
 admin.site.register(models.User, UserAdmin)
+admin.site.register(models.Group, GroupAdmin)
+admin.site.register(models.Workout, WorkoutAdmin)

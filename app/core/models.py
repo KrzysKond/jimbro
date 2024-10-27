@@ -11,17 +11,8 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.conf import settings
-from PIL import Image as PilImage
+from PIL import Image as PilImage, ExifTags
 from django.core.files.base import ContentFile
-
-
-def process_image(image):
-    img = PilImage.open(image)
-    img_io = io.BytesIO()
-    img = img.convert("RGB")
-    img.save(img_io, format='JPEG', quality=80)
-    img_file = ContentFile(img_io.getvalue(), name=image.name)
-    return img_file
 
 
 def workout_image_file_path(instance, filename):
@@ -30,6 +21,33 @@ def workout_image_file_path(instance, filename):
     filename = f'{uuid.uuid4()}{ext}'
 
     return os.path.join('uploads', 'workout', filename)
+
+
+def process_image(image):
+    img = PilImage.open(image)
+
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+        exif = img._getexif()
+        if exif is not None:
+            orientation_value = exif.get(orientation)
+            if orientation_value is not None:
+                if orientation_value == 3:
+                    img = img.rotate(180, expand=True)
+                elif orientation_value == 6:
+                    img = img.rotate(270, expand=True)
+                elif orientation_value == 8:
+                    img = img.rotate(90, expand=True)
+    except Exception as e:
+        print(f"Error while processing EXIF data: {e}")
+
+    img_io = io.BytesIO()
+    img = img.convert("RGB")
+    img.save(img_io, format='JPEG', quality=80)
+    img_file = ContentFile(img_io.getvalue(), name=image.name)
+    return img_file
 
 
 def user_image_file_path(instance, filename):
