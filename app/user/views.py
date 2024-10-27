@@ -107,6 +107,7 @@ class CreateUserTokenView(ObtainAuthToken):
         device_token = request.data.get('device_token')
         if device_token:
             create_endpoint(device_token)
+
         return Response({'token': token.key}, status=status.HTTP_200_OK)
 
 

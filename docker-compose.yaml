@@ -21,6 +21,10 @@ services:
       - DB_USER=devuser
       - DB_PASS=changeme
       - DEBUG=1
+      - AWS_ACCESS_KEY_ID=changeme
+      - AWS_SECRET_ACCESS_KEY=changeme
+      - AWS_REGION_NAME=eu-central-1
+      - AWS_SNS_PLATFORM_APPLICATION_ARN=changeme
     depends_on:
       - db
 
