@@ -9,13 +9,15 @@ from core.models import Workout, Comment
 class WorkoutSerializer(serializers.ModelSerializer):
     """Serializer for workouts"""
     username = serializers.CharField(source='user.name', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
 
     class Meta:
         model = Workout
 
         fields = ['id', 'title', 'date',
-                  'username', 'liked_by',
-                  'fires', 'comments_count']
+                  'liked_by', 'fires',
+                  'comments_count', 'username',
+                  'user_id']
         read_only_fields = ['id', 'comments_count']
 
     def create(self, validated_data):

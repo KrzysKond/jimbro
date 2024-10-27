@@ -87,7 +87,7 @@ class PrivateGroupApiTests(TestCase):
         res = (self.client
                .post(join_group_url(group.id)))
         self.assertEqual(res.status_code,
-                         status.HTTP_400_BAD_REQUEST)
+                         status.HTTP_409_CONFLICT)
         self.assertIn('User is already a member of this group.',
                       res.data['detail'])
 
