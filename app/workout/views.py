@@ -15,6 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from core.models import Workout, Comment
 from rest_framework.response import Response
 from workout import serializers
+from user.serializers import UserImageSerializer
 
 
 class WorkoutViewSet(viewsets.ModelViewSet):
@@ -80,61 +81,38 @@ class WorkoutViewSet(viewsets.ModelViewSet):
                 query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             except ValueError:
                 return Response({
-                    'detail': 'Invalid date format. Use YYYY-MM-DD.'},
-                    status=status.HTTP_400_BAD_REQUEST)
+                    'detail': 'Invalid date format. Use YYYY-MM-DD.'
+                }, status=status.HTTP_400_BAD_REQUEST)
         else:
             query_date = datetime.today().date()
 
         # Get the user model
         User = get_user_model()
-
-        # Get groups of the authenticated user
         user_groups = request.user.group_memberships.all()
-
-        # Get IDs of members in those groups
-        group_member_ids = User.objects.filter(
-            group_memberships__in=user_groups
-        ).values_list('id', flat=True).distinct()
+        group_member_ids = (User.objects
+                            .filter(group_memberships__in=user_groups)
+                            .values_list('id',
+                                         flat=True).distinct())
 
         # Retrieve workouts for users in the same groups on the specified date
-        workouts = self.get_queryset().filter(
-            user__in=group_member_ids, date=query_date
-        )
-        print(workouts, user_groups, user_groups)
+        workouts = (self.get_queryset()
+                    .filter(user__in=group_member_ids, date=query_date))
 
-        # retrieve just user workouts if user is not assigned to a group
-        if workouts.exists() is False:
-            workouts = self.get_queryset().filter(
-                date=query_date,
-                user=request.user
-            )
+        # If no workouts found, retrieve just user workouts
+        if not workouts.exists():
+            workouts = (self.get_queryset()
+                        .filter(date=query_date, user=request.user))
 
         if workouts.exists():
-            workout_serializer = self.get_serializer(workouts, many=True)
-            combined_data = []
+            return Response(self._prepare_workout_data(workouts, request),
+                            status=status.HTTP_200_OK)
 
-            for workout, workout_data in (
-                    zip(workouts, workout_serializer.data)):
-                if request.user in workout.liked_by.all():
-                    workout_data['isLiked'] = True
-                else:
-                    workout_data['isLiked'] = False
-                image_serializer = serializers.WorkoutImageSerializer(workout)
-                image_url = image_serializer.data.get('image', None)
-                if image_url:
-                    image_url = request.build_absolute_uri(image_url)
-                workout_data['image'] = image_url
-                combined_data.append(workout_data)
-
-            return Response(combined_data, status=status.HTTP_200_OK)
-
-        return Response({'detail': 'No workouts found for the given date.'},
-                        status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            'detail': 'No workouts found for the given date.'},
+            status=status.HTTP_404_NOT_FOUND)
 
     @action(methods=['GET'], detail=False, url_path='last-week-workouts')
     def get_last_week_workouts(self, request):
-        """Retrieve workouts for a specified user or
-        the authenticated user from the last week."""
         user_id = request.query_params.get('user_id', None)
         today = datetime.today().date()
         start_date = today - timedelta(days=7)
@@ -150,31 +128,44 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
         workouts = self.get_queryset().filter(
             user=user,
-            date__range=[start_date, today]
-        ).order_by('-date')
+            date__range=[start_date, today]).order_by('-date')
 
         if workouts.exists():
-            workout_serializer = self.get_serializer(workouts, many=True)
-            combined_data = []
+            return Response(self._prepare_workout_data(workouts, request),
+                            status=status.HTTP_200_OK)
 
-            for workout, workout_data in zip(workouts,
-                                             workout_serializer.data):
-                if request.user in workout.liked_by.all():
-                    workout_data['isLiked'] = True
-                else:
-                    workout_data['isLiked'] = False
-                image_serializer = serializers.WorkoutImageSerializer(workout)
-                image_url = image_serializer.data.get('image', None)
-                if image_url:
-                    image_url = request.build_absolute_uri(image_url)
-                workout_data['image'] = image_url
-                combined_data.append(workout_data)
+        return Response({'detail':
+                        'No workouts found for the user in the last week.'},
+                        status=status.HTTP_404_NOT_FOUND)
 
-            return Response(combined_data, status=status.HTTP_200_OK)
+    def _prepare_workout_data(self, workouts, request):
+        """Helper method to prepare combined workout data."""
+        workout_serializer = self.get_serializer(workouts, many=True)
+        combined_data = []
+        user = request.user  # Get the user from the request
 
-        return Response({
-            'detail': 'No workouts found for the user in the last week.'},
-             status=status.HTTP_404_NOT_FOUND)
+        for workout, workout_data in zip(workouts, workout_serializer.data):
+            workout_data['isLiked'] = request.user in workout.liked_by.all()
+
+            # Serialize and build absolute URL for the workout image
+            image_serializer = serializers.WorkoutImageSerializer(workout)
+            image_url = image_serializer.data.get('image', None)
+            workout_data['image'] = (request
+                                     .build_absolute_uri(image_url)) \
+                if image_url else None
+
+            # Get user profile picture
+            profile_pic_serializer = UserImageSerializer(user)
+            profile_picture = (profile_pic_serializer
+                               .data
+                               .get('profile_picture', None))
+            workout_data['profile_picture'] = \
+                (request.build_absolute_uri(profile_picture)) \
+                if profile_picture else None
+
+            combined_data.append(workout_data)
+
+        return combined_data
 
 
 class CommentListCreateView(generics.ListCreateAPIView):

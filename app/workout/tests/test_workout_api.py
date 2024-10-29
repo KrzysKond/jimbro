@@ -106,6 +106,7 @@ class PrivateWorkoutAPITests(TestCase):
         for workout in res.data:
             workout.pop('image', None)
             workout.pop('isLiked')
+            workout.pop('profile_picture', None)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -124,6 +125,7 @@ class PrivateWorkoutAPITests(TestCase):
         for workout in res.data:
             workout.pop('image', None)
             workout.pop('isLiked')
+            workout.pop('profile_picture', None)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -147,6 +149,7 @@ class PrivateWorkoutAPITests(TestCase):
         for workout in res.data:
             workout.pop('image', None)
             workout.pop('isLiked')
+            workout.pop('profile_picture', None)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -174,6 +177,7 @@ class PrivateWorkoutAPITests(TestCase):
         for workout in res.data:
             workout.pop('image', None)
             workout.pop('isLiked')
+            workout.pop('profile_picture')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
