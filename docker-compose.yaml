@@ -21,10 +21,10 @@ services:
       - DB_USER=devuser
       - DB_PASS=changeme
       - DEBUG=1
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION_NAME=${AWS_REGION_NAME}
-      - AWS_SNS_PLATFORM_APPLICATION_ARN=${AWS_SNS_PLATFORM_APPLICATION_ARN}
+      - AWS_ACCESS_KEY_ID=changeme
+      - AWS_SECRET_ACCESS_KEY=changeme
+      - AWS_REGION_NAME=changeme
+      - AWS_SNS_PLATFORM_APPLICATION_ARN=changeme
     depends_on:
       - db
 
