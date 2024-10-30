@@ -18,5 +18,8 @@ urlpatterns = [
     path('info/profile-picture/',
          views.UserViewSet.as_view({'get': 'get_profile_picture'}),
          name='profile-picture'),
+    path('info/delete-account/',
+         views.UserViewSet.as_view({'delete': 'delete_account'}),
+         name='delete-account'),
     path('', include(router.urls)),
 ]

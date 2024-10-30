@@ -195,3 +195,13 @@ class UserViewSet(viewsets.ViewSet):
 
         return Response({'profile_picture': None},
                         status=status.HTTP_404_NOT_FOUND)
+
+    @action(methods=['DELETE'], detail=False, url_path='delete-account')
+    def delete_account(self, request):
+        """Delete the authenticated user's account."""
+        user = request.user
+        user.delete()
+        return Response(
+            {'detail': 'Your account has been deleted.'},
+            status=status.HTTP_200_OK
+        )
