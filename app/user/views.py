@@ -112,7 +112,6 @@ class CreateUserTokenView(ObtainAuthToken):
             endpoint = create_endpoint(device_token)
             subscribe_user_to_topic(endpoint)
 
-
         return Response({'token': token.key}, status=status.HTTP_200_OK)
 
 
