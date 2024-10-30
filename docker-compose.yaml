@@ -25,6 +25,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=changeme
       - AWS_REGION_NAME=changeme
       - AWS_SNS_PLATFORM_APPLICATION_ARN=changeme
+      - AWS_SNS_TOPIC_MAIN_ARN = changeme
     depends_on:
       - db
 

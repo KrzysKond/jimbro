@@ -22,7 +22,7 @@ from user.serializers import (
 
 from core.models import Group, User
 
-from core.aws_sns import create_endpoint
+from core.aws_sns import create_endpoint, subscribe_user_to_topic
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -109,7 +109,9 @@ class CreateUserTokenView(ObtainAuthToken):
 
         device_token = request.data.get('device_token')
         if device_token:
-            create_endpoint(device_token)
+            endpoint = create_endpoint(device_token)
+            subscribe_user_to_topic(endpoint)
+
 
         return Response({'token': token.key}, status=status.HTTP_200_OK)
 

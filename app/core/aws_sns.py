@@ -20,6 +20,16 @@ def create_endpoint(device_token):
     return response["EndpointArn"]
 
 
+def subscribe_user_to_topic(endpoint_arn):
+    topic_arn = settings.AWS_SNS_TOPIC_MAIN_ARN
+    response = sns_client.subscribe(
+        TopicArn=topic_arn,
+        Protocol="application",
+        Endpoint=endpoint_arn
+    )
+    return response["SubscriptionArn"]
+
+
 def send_push_notification(endpoint_arn, message):
     response = sns_client.publish(
         TargetArn=endpoint_arn,
