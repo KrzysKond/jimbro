@@ -153,9 +153,8 @@ class WorkoutViewSet(viewsets.ModelViewSet):
             workout_data['image'] = (request
                                      .build_absolute_uri(image_url)) \
                 if image_url else None
-
             # Get user profile picture
-            profile_pic_serializer = UserImageSerializer(user)
+            profile_pic_serializer = UserImageSerializer(workout.user)
             profile_picture = (profile_pic_serializer
                                .data
                                .get('profile_picture', None))

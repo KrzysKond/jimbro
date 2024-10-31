@@ -1,6 +1,8 @@
 """
 Views for the user API
 """
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import (
     generics, authentication,
     permissions, viewsets, status)
@@ -99,7 +101,7 @@ class CreateUserTokenView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         """Override post method to create token and register device."""
         auth_data = {key: value for key,
-                     value in request.data.items() if key != 'device_token'}
+        value in request.data.items() if key != 'device_token'}
 
         serializer = self.serializer_class(data=auth_data)
         serializer.is_valid(raise_exception=True)
@@ -206,3 +208,8 @@ class UserViewSet(viewsets.ViewSet):
             {'detail': 'Your account has been deleted.'},
             status=status.HTTP_200_OK
         )
+
+
+@csrf_exempt
+def user_account_delete_view(request):
+    return render(request, "delete-account.html")

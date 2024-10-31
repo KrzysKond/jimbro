@@ -22,4 +22,5 @@ urlpatterns = [
          views.UserViewSet.as_view({'delete': 'delete_account'}),
          name='delete-account'),
     path('', include(router.urls)),
+    path('account/delete/', views.user_account_delete_view, name='user-account-delete')
 ]
