@@ -142,7 +142,6 @@ class WorkoutViewSet(viewsets.ModelViewSet):
         """Helper method to prepare combined workout data."""
         workout_serializer = self.get_serializer(workouts, many=True)
         combined_data = []
-        user = request.user  # Get the user from the request
 
         for workout, workout_data in zip(workouts, workout_serializer.data):
             workout_data['isLiked'] = request.user in workout.liked_by.all()
